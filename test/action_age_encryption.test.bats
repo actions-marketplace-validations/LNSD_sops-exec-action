@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 setup() {
-	bats_require_minimum_version 1.5.0
+	bats_require_minimum_version 1.10.0
 
 	# Load test libraries
 	bats_load_library 'bats-support'
@@ -19,7 +19,6 @@ setup() {
 	source "$DIR/../action.sh"
 }
 
-
 @test 'action::age::exec command with environment' {
 	## Given
 	# Create a temporary directory
@@ -30,9 +29,9 @@ setup() {
 	local env_file
 	env_file="$temp_dir/.env"
 
-	cat <<-EOF > "$env_file"
-	SECRET_KEY=YOURSECRETKEYGOESHERE
-	SECRET_HASH=something-with-a-#-hash
+	cat <<-EOF >"$env_file"
+		SECRET_KEY=YOURSECRETKEYGOESHERE
+		SECRET_HASH=something-with-a-#-hash
 	EOF
 
 	# Define the test command
@@ -74,9 +73,9 @@ setup() {
 	local env_file
 	env_file="$temp_dir/.env"
 
-	cat <<-EOF > "$env_file"
-	SECRET_KEY=YOURSECRETKEYGOESHERE
-	SECRET_HASH=something-with-a-#-hash
+	cat <<-EOF >"$env_file"
+		SECRET_KEY=YOURSECRETKEYGOESHERE
+		SECRET_HASH=something-with-a-#-hash
 	EOF
 
 	# Define the test command
@@ -118,9 +117,9 @@ setup() {
 	local env_file
 	env_file="$temp_dir/.env"
 
-	cat <<-EOF > "$env_file"
-	SECRET_KEY=YOURSECRETKEYGOESHERE
-	SECRET_HASH=something-with-a-#-hash
+	cat <<-EOF >"$env_file"
+		SECRET_KEY=YOURSECRETKEYGOESHERE
+		SECRET_HASH=something-with-a-#-hash
 	EOF
 
 	# Define the test command
@@ -162,9 +161,9 @@ setup() {
 	local env_file
 	env_file="$temp_dir/.env"
 
-	cat <<-EOF > "$env_file"
-	SECRET_KEY=YOURSECRETKEYGOESHERE
-	SECRET_HASH=something-with-a-#-hash
+	cat <<-EOF >"$env_file"
+		SECRET_KEY=YOURSECRETKEYGOESHERE
+		SECRET_HASH=something-with-a-#-hash
 	EOF
 
 	# Define the test command
@@ -195,5 +194,3 @@ setup() {
 	# Remove the temporary directory
 	temp_del "$temp_dir"
 }
-
-

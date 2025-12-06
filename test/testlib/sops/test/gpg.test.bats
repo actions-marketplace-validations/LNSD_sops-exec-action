@@ -6,7 +6,7 @@ setup() {
 	bats_load_library 'bats-assert'
 	bats_load_library 'bats-file'
 
-	bats_load_library 'age'
+	bats_load_library 'gpg'
 	load '../load'
 }
 
@@ -19,10 +19,10 @@ setup() {
 function new_test_env_file() {
 	local dest_file="$1"
 
-	cat <<-EOF > "$dest_file"
-	# This is a comment
-	SECRET_KEY=YOURSECRETKEYGOESHERE # comment
-	SECRET_HASH="something-with-a-#-hash"
+	cat <<-EOF >"$dest_file"
+		# This is a comment
+		SECRET_KEY=YOURSECRETKEYGOESHERE # comment
+		SECRET_HASH="something-with-a-#-hash"
 	EOF
 }
 
@@ -70,7 +70,6 @@ function assert_file_is_not_encrypted() {
 	return 0
 }
 
-
 @test 'sops::files::it should encrypt the environment file' {
 	## Setup
 	local temp_dir
@@ -82,14 +81,21 @@ function assert_file_is_not_encrypted() {
 	env_file="$temp_dir/.env"
 	new_test_env_file "$env_file"
 
-	# Create a new age keypair.
-	age::generate_keypair "$temp_dir/key.age"
+	# Create a new gpg keypair.
+	gpg::generate_keypair "$temp_dir/key.gpg"
+
+	# Create a new gpg homedir
+	local gpg_home_dir="$temp_dir/gpg"
+	mkdir -p "$gpg_home_dir"
+
+	# Import the key into the gpg's keyring
+	gpg::import_key_file "$temp_dir/key.gpg" "$gpg_home_dir"
 
 	## When
 	local encrypted_file
 	encrypted_file="$env_file.encrypted"
 
-	sops::encrypt_with_age "$AGE_PUBLIC_KEY" "$env_file" > "$encrypted_file"
+	sops::encrypt_with_gpg "$GPG_KEY_FP" "$env_file" "$gpg_home_dir" >"$encrypted_file"
 
 	## Then
 	assert [ $? -eq 0 ]
@@ -111,16 +117,23 @@ function assert_file_is_not_encrypted() {
 	env_file="$temp_dir/.env"
 	new_test_env_file "$env_file"
 
-	# Create a new age keypair.
-	age::generate_keypair "$temp_dir/key.age"
+	# Create a new gpg keypair.
+	gpg::generate_keypair "$temp_dir/key.gpg"
+
+	# Create a new gpg homedir
+	local gpg_home_dir="$temp_dir/gpg"
+	mkdir -p "$gpg_home_dir"
+
+	# Import the key into the gpg's keyring
+	gpg::import_key_file "$temp_dir/key.gpg" "$gpg_home_dir"
 
 	# Encrypt the environment file.
-	sops::encrypt_in_place_with_age "$AGE_PUBLIC_KEY" "$env_file"
+	sops::encrypt_in_place_with_gpg "$GPG_KEY_FP" "$env_file"
 
 	## When
 	local decrypted_file
 	decrypted_file="$env_file.decrypted"
-	sops::decrypt_with_age "$AGE_SECRET_KEY" "$env_file" > "$decrypted_file"
+	sops::decrypt_with_gpg "$GPG_SECRET_KEY" "$env_file" "$gpg_home_dir" >"$decrypted_file"
 
 	## Then
 	assert [ $? -eq 0 ]

@@ -1,4 +1,4 @@
-name: test
+name: ci
 on:
   pull_request:
   merge_group:
@@ -11,31 +11,44 @@ concurrency:
 
 env:
   # renovate: datasource=github-releases depName=FiloSottile/age
-  age-version: 1.1.1
+  age-version: 1.2.1
   # renovate: datasource=github-releases depName=getsops/sops
-  sops-version: 3.8.1
+  sops-version: 3.11.0
 
 jobs:
+  fmt-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+
+      - name: Setup just
+        uses: extractions/setup-just@e33e0265a09d6d736e2ee1e0eb685ef1de4669ff # v3
+
+      - name: Install shfmt
+        run: sudo apt-get install -y shfmt
+
+      - run: just fmt-check
+
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
-      - name: Setup shellcheck
-        run: sudo apt-get install -y shellcheck
+      - name: Install shellcheck and yamllint
+        run: sudo apt-get install -y shellcheck yamllint
 
-      - name: Setup yamllint
-        run: sudo apt-get install -y yamllint
+      - name: Setup just
+        uses: extractions/setup-just@e33e0265a09d6d736e2ee1e0eb685ef1de4669ff # v3
 
       - name: Setup Bats and bats libs
-        uses: bats-core/bats-action@0ae349dad1aa69308725a48b91b5d6ca647040bc # 1.5.6
+        uses: bats-core/bats-action@42fcc8700f773c075a16a90eb11674c0318ad507 # 3.0.1
         with:
           # renovate: datasource=github-releases depName=bats-core/bats-core
-          bats-version: 1.10.0
+          bats-version: 1.13.0
           # renovate: datasource=github-releases depName=bats-core/bats-support
           support-version: 0.3.0
           # renovate: datasource=github-releases depName=bats-core/bats-assert
-          assert-version: 2.1.0
+          assert-version: 2.2.4
           detik-install: false
           # renovate: datasource=github-releases depName=bats-core/bats-file
           file-version: 0.4.0
@@ -46,22 +59,24 @@ jobs:
           version: ${{ env.age-version }}
 
       - name: Setup sops
-        uses: nhedger/setup-sops@358bac533e4e92f9ce9f9da563d6265929c88cda # v2
+        uses: nhedger/setup-sops@187c90dbb4e28c3225263886266a5b92baa7e5a1 # v2
         with:
           version: ${{ env.sops-version }}
 
-      - run: make check-testlib
-      - run: make test-testlib
+      # Validate testlib
+      - run: just check-testlib
+      - run: just test-testlib
 
-      - run: make check
-      - run: make unittest
-      - run: make inttest
+      # Validate action code
+      - run: just check
+      - run: just unittest
+      - run: just inttest
 
   e2e:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: Setup age
         uses: alessiodionisi/setup-age-action@82b9aea163ade7fe23441552a514cf666b214077 # v1.3.0
@@ -69,12 +84,12 @@ jobs:
           version: ${{ env.age-version }}
 
       - name: Setup sops
-        uses: nhedger/setup-sops@358bac533e4e92f9ce9f9da563d6265929c88cda # v2
+        uses: nhedger/setup-sops@187c90dbb4e28c3225263886266a5b92baa7e5a1 # v2
         with:
           version: ${{ env.sops-version }}
 
       - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@01dd5d3ca463c7f10f7f4f7b4f177225ac661ee4 # v6
+        uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec # v6
         id: gpg-import
         with:
           gpg_private_key: ${{ secrets.IT_E2E_SOPS_GPG_KEY }}
